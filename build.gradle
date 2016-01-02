@@ -110,3 +110,8 @@ task detokenizeSource(type: Copy) {
 
 compileJava.dependsOn(detokenizeSource)
 compileJava.source = fileTree(dir: 'build/detokenizedSource')
+
+// Compile tasks in utf8, for snowmen :)
+tasks.withType(JavaCompile) {
+    options.encoding = 'UTF-8'
+}
