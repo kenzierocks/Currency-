@@ -142,7 +142,7 @@ public class CSPlugin {
                     return CommandResult.success();
                 }).arguments(GenericArguments.string(Text.of("switch")))
                         .build(),
-                "currencysnowmen", "cs");
+                "currencysnowmen", "cs", "<snowman>", "<snowmen>", "☃");
         this.logger.info("Loaded " + NAME + " v" + VERSION);
     }
 
