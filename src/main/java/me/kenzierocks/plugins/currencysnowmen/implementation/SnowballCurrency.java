@@ -20,6 +20,11 @@ public final class SnowballCurrency implements ExtendedCurrency {
     private static final DecimalFormat DECIMAL_FORMAT =
             new DecimalFormat("0.00");
 
+    public static final SnowballCurrency INSTANCE = new SnowballCurrency();
+
+    private SnowballCurrency() {
+    }
+
     @Override
     public Text getDisplayName() {
         return DISPLAY_NAME;
@@ -78,7 +83,7 @@ public final class SnowballCurrency implements ExtendedCurrency {
     public BigDecimal getDefaultBalance() {
         return BigDecimal.ZERO;
     }
-    
+
     @Override
     public String getIdentifer() {
         return "snowballs";
