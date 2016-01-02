@@ -1,6 +1,12 @@
 package me.kenzierocks.plugins.currencysnowmen.implementation;
 
+import java.io.IOException;
+import java.io.Reader;
+import java.io.Writer;
+import java.lang.reflect.Type;
 import java.math.BigDecimal;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Optional;
@@ -24,15 +30,29 @@ import org.spongepowered.api.text.Text;
 
 import com.google.common.collect.HashBasedTable;
 import com.google.common.collect.Table;
+import com.google.common.reflect.TypeToken;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 
-import me.kenzierocks.plugins.currencysnowmen.extensions.ExtendedCurrency;
+import me.kenzierocks.plugins.currencysnowmen.CSPlugin;
+import me.kenzierocks.plugins.currencysnowmen.ExtendedCurrency;
 import me.kenzierocks.plugins.currencysnowmen.implementation.Transactionals.TRData;
-import me.kenzierocks.plugins.currencysnowmen.service.CSEconomyService;
 
 public class CSAccount implements Account {
 
-    private static TransactionResult handleAction(Cause cause, TRData data,
-            Supplier<TransactionResult> provideInitialState,
+    private static final Gson JSON;
+    @SuppressWarnings("serial")
+    private static final Type DATA_TYPE =
+            new TypeToken<Table<Currency, Set<Context>, BigDecimal>>() {
+            }.getType();
+    static {
+        GsonBuilder builder = new GsonBuilder();
+        builder.registerTypeAdapter(DATA_TYPE, new DataMapAdapter());
+        JSON = builder.create();
+    }
+
+    private static TransactionResult handleAction(CSAccount $this, Cause cause,
+            TRData data, Supplier<TransactionResult> provideInitialState,
             Supplier<TransactionResult> ifSuccessful) {
         TransactionResult result = provideInitialState.get();
         EconomyTransactionEvent transaction =
@@ -43,12 +63,12 @@ public class CSAccount implements Account {
         }
         if (result.getResult() == ResultType.SUCCESS) {
             result = ifSuccessful.get();
+            if (result.getResult() == ResultType.SUCCESS) {
+                $this.save();
+            }
         }
         return result;
     }
-
-    private transient final CSEconomyService runningService =
-            Sponge.getServiceManager().provideUnchecked(CSEconomyService.class);
 
     private final String id;
     private final Text displayName;
@@ -62,6 +82,45 @@ public class CSAccount implements Account {
     protected CSAccount(String id, Text displayName) {
         this.id = id;
         this.displayName = displayName;
+        load();
+    }
+
+    private void load() {
+        Path saveLocation = CSPlugin.getInstance().getAccountSerializationDir()
+                .resolve(this.id);
+        if (!Files.exists(saveLocation)) {
+            return;
+        }
+        try (
+                Reader reader = Files.newBufferedReader(saveLocation)) {
+            Table<Currency, Set<Context>, BigDecimal> data =
+                    JSON.fromJson(reader, DATA_TYPE);
+            this.currencyTable.putAll(data);
+        } catch (IOException e) {
+            CSPlugin.getInstance().getLogger()
+                    .error("couldn't load acc " + this.id, e);
+        }
+    }
+
+    private void save() {
+        Path saveLocation = CSPlugin.getInstance().getAccountSerializationDir()
+                .resolve(this.id);
+        if (!Files.exists(saveLocation)) {
+            try {
+                Files.createDirectories(saveLocation.getParent());
+                Files.createFile(saveLocation);
+            } catch (IOException e) {
+                CSPlugin.getInstance().getLogger()
+                        .error("couldn't save acc " + this.id, e);
+            }
+        }
+        try (
+                Writer writer = Files.newBufferedWriter(saveLocation)) {
+            JSON.toJson(this.currencyTable, DATA_TYPE, writer);
+        } catch (IOException e) {
+            CSPlugin.getInstance().getLogger()
+                    .error("couldn't save acc " + this.id, e);
+        }
     }
 
     private TransactionResult handleNonTransfer(Cause cause, BigDecimal from,
@@ -70,7 +129,7 @@ public class CSAccount implements Account {
         TransactionType type = from.compareTo(to) > 0
                 ? TransactionTypes.WITHDRAW : TransactionTypes.DEPOSIT;
         TRData data = new TRData(this, currency, delta, contexts, type);
-        return handleAction(cause, data, () -> {
+        return handleAction(this, cause, data, () -> {
             if (currency instanceof ExtendedCurrency) {
                 ExtendedCurrency extCur = (ExtendedCurrency) currency;
                 if (!extCur.supportsNegatives()
@@ -103,7 +162,7 @@ public class CSAccount implements Account {
         BigDecimal thisAccNewVal = to;
         BigDecimal thatAccNewVal =
                 that.getBalanceOrDefault(currency, contexts).subtract(delta);
-        return handleAction(cause, data, () -> {
+        return handleAction(this, cause, data, () -> {
             if (currency instanceof ExtendedCurrency) {
                 ExtendedCurrency extCur = (ExtendedCurrency) currency;
                 if (!extCur.supportsNegatives() && (thisAccNewVal
@@ -136,7 +195,7 @@ public class CSAccount implements Account {
     @Override
     public Set<Context> getActiveContexts() {
         Set<ContextCalculator<Account>> ccs =
-                this.runningService.getContextCalculators();
+                CSEconomyService.INSTANCE.getContextCalculators();
         Set<Context> contexts = new HashSet<>();
         for (ContextCalculator<Account> contextCalculator : ccs) {
             contextCalculator.accumulateContexts(this, contexts);

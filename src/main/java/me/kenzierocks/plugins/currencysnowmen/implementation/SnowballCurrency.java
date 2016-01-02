@@ -1,4 +1,4 @@
-package me.kenzierocks.plugins.currencysnowmen.currencies;
+package me.kenzierocks.plugins.currencysnowmen.implementation;
 
 import java.math.BigDecimal;
 import java.text.DecimalFormat;
@@ -6,7 +6,7 @@ import java.util.Optional;
 
 import org.spongepowered.api.text.Text;
 
-import me.kenzierocks.plugins.currencysnowmen.extensions.ExtendedCurrency;
+import me.kenzierocks.plugins.currencysnowmen.ExtendedCurrency;
 
 /**
  * An example of a currency implemented in Currency☃.
@@ -77,6 +77,11 @@ public final class SnowballCurrency implements ExtendedCurrency {
     @Override
     public BigDecimal getDefaultBalance() {
         return BigDecimal.ZERO;
+    }
+    
+    @Override
+    public String getIdentifer() {
+        return "snowballs";
     }
 
 }

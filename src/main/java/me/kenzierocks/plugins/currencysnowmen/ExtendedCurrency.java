@@ -1,4 +1,4 @@
-package me.kenzierocks.plugins.currencysnowmen.extensions;
+package me.kenzierocks.plugins.currencysnowmen;
 
 import java.math.BigDecimal;
 import java.util.Optional;
@@ -12,5 +12,7 @@ public interface ExtendedCurrency extends Currency {
     Optional<BigDecimal> getMaximumAccountBalance();
 
     BigDecimal getDefaultBalance();
+    
+    String getIdentifer();
 
 }

@@ -16,8 +16,8 @@ import org.spongepowered.api.service.economy.EconomyService;
 
 import com.google.inject.Inject;
 
-import me.kenzierocks.plugins.currencysnowmen.currencies.SnowballCurrency;
-import me.kenzierocks.plugins.currencysnowmen.service.CSEconomyService;
+import me.kenzierocks.plugins.currencysnowmen.implementation.CSEconomyService;
+import me.kenzierocks.plugins.currencysnowmen.implementation.SnowballCurrency;
 
 @Plugin(id = CSPlugin.ID, name = CSPlugin.NAME, version = CSPlugin.VERSION)
 public class CSPlugin {
@@ -64,17 +64,18 @@ public class CSPlugin {
                     e);
         }
         ServiceManager serviceManager = Sponge.getServiceManager();
-        serviceManager.setProvider(this, EconomyService.class,
-                new CSEconomyService());
-        serviceManager.setProvider(this, CSEconomyService.class,
-                new CSEconomyService());
-        serviceManager.provideUnchecked(CSEconomyService.class)
-                .registerCurrency(new SnowballCurrency());
+        CSEconomyService econService = CSEconomyService.INSTANCE;
+        serviceManager.setProvider(this, EconomyService.class, econService);
+        econService.registerCurrency(new SnowballCurrency());
         this.logger.info("Loaded " + NAME + " v" + VERSION);
     }
 
     public Path getConfigDir() {
         return this.configDir;
+    }
+
+    public Path getAccountSerializationDir() {
+        return this.configDir.resolve("accounts");
     }
 
 }
