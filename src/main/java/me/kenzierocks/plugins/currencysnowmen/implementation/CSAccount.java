@@ -109,7 +109,7 @@ public class CSAccount implements Account {
         load();
     }
 
-    private void load() {
+    public void load() {
         Path saveLocation = CSPlugin.getInstance().getAccountSerializationDir()
                 .resolve(this.id);
         if (!Files.exists(saveLocation)) {
@@ -126,7 +126,7 @@ public class CSAccount implements Account {
         }
     }
 
-    private void save() {
+    public void save() {
         Path saveLocation = CSPlugin.getInstance().getAccountSerializationDir()
                 .resolve(this.id);
         if (!Files.exists(saveLocation)) {

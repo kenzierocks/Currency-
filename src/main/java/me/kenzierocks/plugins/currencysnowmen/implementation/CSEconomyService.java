@@ -34,6 +34,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Stream;
 
 import org.spongepowered.api.Sponge;
 import org.spongepowered.api.service.context.ContextCalculator;
@@ -82,6 +83,14 @@ public class CSEconomyService implements EconomyService {
 
     public Set<ContextCalculator<Account>> getContextCalculators() {
         return this.calculatorsReadOnlyView;
+    }
+    
+    public Stream<Account> getAccounts() {
+        return this.accountMap.values().stream();
+    }
+    
+    public void removeAccount(String id) {
+        this.accountMap.remove(id);
     }
 
     @Override
